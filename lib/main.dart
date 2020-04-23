@@ -1,71 +1,70 @@
-import 'dart:async';
 import 'dart:convert';
-
+import 'package:startngfluttertask3/API.dart';
+import 'package:startngfluttertask3/models/User.dart';
+import 'package:startngfluttertask3/UserPage.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+void main() => runApp(MyApp());
 
-void main() => runApp(new MaterialApp(
-  home: new HomePage(),
-));
-
+class MyApp extends StatelessWidget{
+  @override
+  build(context){
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "Api Retriever",
+      theme: ThemeData(
+        primarySwatch:Colors.indigo,
+      ),
+      home: HomePage(),
+    );
+  }
+}
 class HomePage extends StatefulWidget{
   @override
-  HomePageState createState()=> new HomePageState();
+  createState()=> new HomePageState();
 
 }
-class HomePageState extends State<HomePage>{
-  
-  final String url = "https://jsonplaceholder.typicode.com/users";
-  List data;
+class HomePageState extends State{
+  var users = new List<User>();
 
-  @override
-  void initState(){
-    super.initState();
-    this.getJsonData();
+  _getUsers(){
+    API.getUsers().then((response){
+      setState(() {
+        Iterable list = json.decode(response.body);
+        users = list.map((model) => User.fromJson(model)).toList();
+      });
+    });
   }
 
-  Future<String> getJsonData( ) async{
-    var response = await http.get(
-      //Encode the url
-      Uri.encodeFull(url),
-      //Only accepting json response
-      headers: {"Accept": "application/json"}
-    );
-
-    print(response.body);
-
-    setState(() {
-      var convertDataToJson = json.decode(response.body);
-      data = convertDataToJson['users'];
-    });
-
-    return "Success";
+  @override
+  initState() {
+    super.initState();
+    _getUsers();
+  }
+  dispose(){
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context){
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text("Retrieve Json via HTTP Get"),
+        title: new Text("User List"),
       ),
       body: new ListView.builder(
-        itemCount: data == null? 0: data.length,
+        itemCount: users == null? 0: users.length,
         itemBuilder: (BuildContext context, int index){
-          return new Container(
-            child: new Center(
-              child: new Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  new Card(
-                    child: new Container(
-                      child: new Text(data[index]['name']),
-                      padding: const EdgeInsets.all(20.0),
-                    ),
-                  )
-                ],
-              ),
-            ),
+          return ListTile(
+            leading: Image.asset('assets/avatar.png',),
+              title: Text(users[index].name),
+            subtitle: Text(users[index].email),
+
+            onTap:() => Navigator.of(context).push(
+              MaterialPageRoute(
+                  builder: (context) => UserPage(
+                    post:users[index],
+                  ))
+            ) ,
           );
         },
       ),
